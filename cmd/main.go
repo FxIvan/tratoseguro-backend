@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 
+	bootstrap "github.com/FxIvan/bootstrap"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,12 +16,9 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
 	}
-
-	dbUser := os.Getenv("MONGO_USER")
-	dbPass := os.Getenv("MONGO_PASS")
-	dbHost := os.Getenv("MONGO_HOST")
-	uri := fmt.Sprintf("mongodb+srv://%s:%s@%s", dbUser, dbPass, dbHost)
-
+	appEnv := bootstrap.NewEnv()
+	uri := fmt.Sprintf("mongodb+srv://%s:%s@%s", appEnv.DbUser, appEnv.DbPass, appEnv.DbHost)
+	fmt.Print("----->", uri)
 	if uri == "" {
 		log.Fatal("You must set your 'MONGODB_URI' environment variable. See\n\t https://www.mongodb.com/docs/drivers/go/current/usage-examples/#environment-variable")
 	}
