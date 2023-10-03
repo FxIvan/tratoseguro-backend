@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	bootstrap "github.com/FxIvan/bootstrap"
+	route "github.com/FxIvan/routes"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -18,7 +20,6 @@ func main() {
 	}
 	appEnv := bootstrap.NewEnv()
 	uri := fmt.Sprintf("mongodb+srv://%s:%s@%s", appEnv.DbUser, appEnv.DbPass, appEnv.DbHost)
-	fmt.Print("----->", uri)
 	if uri == "" {
 		log.Fatal("You must set your 'MONGODB_URI' environment variable. See\n\t https://www.mongodb.com/docs/drivers/go/current/usage-examples/#environment-variable")
 	}
@@ -37,17 +38,20 @@ func main() {
 		Author string
 	}
 
-	router := gin.Default()
+	timeout := time.Duration(5) * time.Second
 
-	router.POST("/", postBooks)
+	gin := gin.Default()
+	route.Setup(appEnv, timeout, *client.Database("books"), gin)
+	/*
+		router.POST("/", postBooks)
 
-	coll := client.Database("db").Collection("books")
-	doc := Book{Title: "Atonement", Author: "Ian McEwan"}
+		coll := client.Database("db").Collection("books")
+		doc := Book{Title: "Atonement", Author: "Ian McEwan"}
 
-	result, err := coll.InsertOne(context.TODO(), doc)
+		result, err := coll.InsertOne(context.TODO(), doc)
 
-	fmt.Printf("Inserted document with _id: %v\n", result.InsertedID)
-
+		fmt.Printf("Inserted document with _id: %v\n", result.InsertedID)
+	*/
 	/*
 		coll := client.Database("sample_mflix").Collection("movies")
 		title := "Back to the Future"
@@ -66,7 +70,7 @@ func main() {
 		}
 		fmt.Printf("%s\n", jsonData)
 	*/
-	router.Run(":8080")
+	gin.Run(":8080")
 }
 
 type SimpleUser struct {
