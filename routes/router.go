@@ -12,5 +12,6 @@ func Setup(env *bootstrap.Env, timeout time.Duration, db mongo.Database, gin *gi
 	publicRoute := gin.Group("/api/v1")
 
 	SignUp(env, timeout, db, publicRoute)
+	//SignIn(env, timeout, db, publicRoute)
 
 }
