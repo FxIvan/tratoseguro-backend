@@ -19,17 +19,20 @@ func SignUp(env *bootstrap.Env, timeout time.Duration, db mongo.Database, group 
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
+
 		var cntx = c.Request.Context()
 
-	 // Parámetros de encriptación (ajusta según tus necesidades)
-		salt := []byte("salt")  // Sal para derivación de clave
-		key, err := scrypt.Key([]byte(request.Email), salt, 32768, 8, 1, 32)
+	 	//Creamos la key a traves de un algoritmo de encriptacion, que la sacamos de la libreria scrypt
+		salt := []byte("salt")  // salt es una variable aleatoria que se utiliza como "semilla" para generar la clave derivada
+		key, err := scrypt.Key([]byte(request.Email), salt, 32768, 8, 1, 32) // Clave derivada 32768 es la iteracion. 8 es el tamaño de la memoria. 1 es el paralelismo. 32 es el tamaño de la clave
+		
+		
 		if err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
 
-		// Verificar si el correo electrónico ya existe en la base de datos
+		// Encrypamos email y password
 		encryptedEmail, err := encryptEmail(request.Email, key)
 		encryptedPassword, err := encryptEmail(request.Password, key)
 
