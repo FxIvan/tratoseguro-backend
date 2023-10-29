@@ -13,8 +13,8 @@ type SignupRequest struct {
 }
 
 type SignupRequestEncrypt struct {
-	Email    []byte `json:"email"`
-	Password []byte `json:"password"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type SignInRequest struct {
