@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/crypto/scrypt"
 )
 
@@ -29,27 +30,11 @@ func SignUp(env *bootstrap.Env, timeout time.Duration, db mongo.Database, group 
 
 		var cntx = c.Request.Context()
 
-	 	//Creamos la key a traves de un algoritmo de encriptacion, que la sacamos de la libreria scrypt
-		 salt := "salt" // Cambia la "sal" a una cadena de texto
-		 key, err := deriveKey(request.Email, salt)
-		 if err != nil {
-			 c.JSON(400, gin.H{"error": err.Error()})
-			 return
-		 } // salt es una variable aleatoria que se utiliza como "semilla" para generar la clave derivada
-		//key, err := scrypt.Key([]byte(request.Email), salt, 32768, 8, 1, 32) // Clave derivada 32768 es la iteracion. 8 es el tamaño de la memoria. 1 es el paralelismo. 32 es el tamaño de la clave
-		
-		/*if err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
-			return
-		}*/
-
-		// Encrypamos email y password
-		encryptedEmail, err := encryptText(request.Email, key)
-		encryptedPassword, err := encryptText(request.Password, key)
+		encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
 
 		userEncrypt := domain.SignupRequestEncrypt{
-			Email:    encryptedEmail,
-			Password: encryptedPassword,
+			Email:    request.Email,
+			Password: string(encryptedPassword),
 		}
 
 		if err != nil {
@@ -57,34 +42,23 @@ func SignUp(env *bootstrap.Env, timeout time.Duration, db mongo.Database, group 
 			return
 		}
 
-		filter := bson.M{"email": encryptedEmail}
+		filter := bson.M{"email": userEncrypt.Email}
 		err = db.Collection("users").FindOne(cntx, filter).Decode(&userEncrypt)
-		
 		if err == nil {
-			// El correo electrónico ya está en uso
 			c.JSON(400, gin.H{"error": "Email already in use"})
 			return
 		}else if err != mongo.ErrNoDocuments {
-			// Ocurrió un error diferente a "documento no encontrado"
-			c.JSON(500, gin.H{"error": err.Error()})
+			c.JSON(500, gin.H{"error --->": err.Error()})
 			return
 		}
-		result,err := decryptText(encryptedEmail, key)
-		if err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
-			return
-		}
-		
-		fmt.Println(result)
 
-
-		// Guardar el nuevo usuario en la base de datos
 		_ , err = db.Collection("users").InsertOne(cntx, userEncrypt)
 		if err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
 
+		fmt.Println("User created ->",userEncrypt.Email)
 		c.JSON(200, gin.H{"message": "User created successfully"})
 	})
 }
