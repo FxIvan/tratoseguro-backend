@@ -1,22 +1,16 @@
 package route
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"encoding/base64"
-	"errors"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/FxIvan/bootstrap"
 	"github.com/FxIvan/domain"
+	response "github.com/FxIvan/util"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
-	"golang.org/x/crypto/scrypt"
 )
 
 func SignUp(env *bootstrap.Env, timeout time.Duration, db mongo.Database, group *gin.RouterGroup) {
@@ -63,51 +57,37 @@ func SignUp(env *bootstrap.Env, timeout time.Duration, db mongo.Database, group 
 	})
 }
 
-func deriveKey(email, salt string) ([]byte, error) {
-	return scrypt.Key([]byte(email), []byte(salt), 32768, 8, 1, 32)
-}
-// Función para encriptar el correo electrónico
-func encryptText(plainText string, key []byte) (string, error) {
-    block, err := aes.NewCipher(key)
-    if err != nil {
-        return "", err
-    }
+func SignIn(env *bootstrap.Env, timeout time.Duration, db mongo.Database, group *gin.RouterGroup){
+	group.POST("/signin", func(c *gin.Context) {
+		var resuest domain.SignInRequest
 
-    plaintext := []byte(plainText)
-    ciphertext := make([]byte, aes.BlockSize+len(plaintext))
-    iv := ciphertext[:aes.BlockSize]
+		if err := c.ShouldBindJSON(&resuest); err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
 
-    if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-        return "", err
-    }
 
-    stream := cipher.NewCFBEncrypter(block, iv)
-    stream.XORKeyStream(ciphertext[aes.BlockSize:], plaintext)
+		var cntx = c.Request.Context()
 
-    return base64.StdEncoding.EncodeToString(ciphertext), nil
-}
+		filter := bson.M{"email": resuest.Email}
 
-func decryptText(encryptedText string, key []byte) (string, error) {
-    ciphertext, err := base64.StdEncoding.DecodeString(encryptedText)
-    if err != nil {
-        return "", err
-    }
+		var userEncrypt domain.SigninRequestEncrypt
 
-    block, err := aes.NewCipher(key)
-    if err != nil {
-        return "", err
-    }
+		err := db.Collection("users").FindOne(cntx, filter).Decode(&userEncrypt)
+		if err != nil {
+			response.ResponseStatus(400, "Unregistered user", c)
+			return
+		}
 
-    if len(ciphertext) < aes.BlockSize {
-        return "", errors.New("ciphertext too short")
-    }
+		err = bcrypt.CompareHashAndPassword([]byte(userEncrypt.Password), []byte(resuest.Password))
 
-    iv := ciphertext[:aes.BlockSize]
-    ciphertext = ciphertext[aes.BlockSize:]
+		if err != nil {
+			response.ResponseStatus(400, "Email or password incorrect", c)
+			return
+		}
 
-    stream := cipher.NewCFBDecrypter(block, iv)
-    stream.XORKeyStream(ciphertext, ciphertext)
+		fmt.Println("User logged ->",userEncrypt.Email)
 
-    return string(ciphertext), nil
+	})
 }
 

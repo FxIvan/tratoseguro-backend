@@ -22,7 +22,7 @@ type SignInRequest struct {
 	Password string `json:"password"`
 }
 
-type SignInRequestEncrypt struct {
-	Email    []byte `json:"email"`
-	Password []byte `json:"password"`
+type SigninRequestEncrypt struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
