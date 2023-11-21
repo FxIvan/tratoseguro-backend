@@ -1,5 +1,7 @@
 package domain
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type UserInput struct {
 	FirstName string `json:"firstName" xml:"firstName" bson:"firstName" validate:"required"`
 	LastName  string `json:"lastName" xml:"lastName" bson:"lastName" validate:"required"`
@@ -13,8 +15,9 @@ type SignupRequest struct {
 }
 
 type SignupRequestEncrypt struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	ID       primitive.ObjectID `bson:"_id"`
+	Email    string				`json:"email"`
+	Password string				`json:"password"`
 }
 
 type SignInRequest struct {
@@ -23,6 +26,7 @@ type SignInRequest struct {
 }
 
 type SigninRequestEncrypt struct {
+	ID       string `bson:"_id"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }

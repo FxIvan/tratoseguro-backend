@@ -2,12 +2,16 @@ package route
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"time"
 
 	"github.com/FxIvan/bootstrap"
+	"github.com/FxIvan/config"
 	"github.com/FxIvan/domain"
 	response "github.com/FxIvan/util"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
@@ -86,8 +90,42 @@ func SignIn(env *bootstrap.Env, timeout time.Duration, db mongo.Database, group 
 			return
 		}
 
-		fmt.Println("User logged ->",userEncrypt.Email)
+		expTimeMs, _ := strconv.Atoi(config.JWTExpirationMs)
+		
+		type JWTCustomClaims struct {
+			ID    string `json:"id"`
+			Email string `json:"email"`
+			Role  string `json:"role"`
+			jwt.RegisteredClaims
+		}
+		
+		claims := JWTCustomClaims{
+			ID:    userEncrypt.ID,
+			Email: userEncrypt.Email,
+			Role:  "admin",
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(expTimeMs) * time.Millisecond)),
+			},
+		}
+		
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
+		if err != nil {
+			log.Fatal(err)
+		}
+		
+		fmt.Println("Token generated ->", token)
+		
+		jwtString, err := token.SignedString([]byte(config.JWTSecret))
+		
+		if err != nil {
+			fmt.Println("Error generating token ->", err)
+			response.ResponseStatus(400, "Error generating token", c)
+			return
+		}
+		
+		c.JSON(200, gin.H{"token": jwtString})
+		
 	})
 }
 
