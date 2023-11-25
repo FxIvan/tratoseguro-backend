@@ -63,9 +63,9 @@ func SignUp(env *bootstrap.Env, timeout time.Duration, db mongo.Database, group 
 
 func SignIn(env *bootstrap.Env, timeout time.Duration, db mongo.Database, group *gin.RouterGroup){
 	group.POST("/signin", func(c *gin.Context) {
-		var resuest domain.SignInRequest
+		var request domain.SignInRequest
 
-		if err := c.ShouldBindJSON(&resuest); err != nil {
+		if err := c.ShouldBindJSON(&request); err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
@@ -73,7 +73,7 @@ func SignIn(env *bootstrap.Env, timeout time.Duration, db mongo.Database, group 
 
 		var cntx = c.Request.Context()
 
-		filter := bson.M{"email": resuest.Email}
+		filter := bson.M{"email": request.Email}
 
 		var userEncrypt domain.SigninRequestEncrypt
 
@@ -83,7 +83,7 @@ func SignIn(env *bootstrap.Env, timeout time.Duration, db mongo.Database, group 
 			return
 		}
 
-		err = bcrypt.CompareHashAndPassword([]byte(userEncrypt.Password), []byte(resuest.Password))
+		err = bcrypt.CompareHashAndPassword([]byte(userEncrypt.Password), []byte(request.Password))
 
 		if err != nil {
 			response.ResponseStatus(400, "Email or password incorrect", c)
