@@ -70,3 +70,8 @@ func SignIn(env *bootstrap.Env, timeout time.Duration, db mongo.Database, group 
 	})
 }
 
+func ProfileUser(env *bootstrap.Env, timeout time.Duration, db mongo.Database, group *gin.RouterGroup){
+	group.GET("/profile", func(c *gin.Context){
+		fmt.Println("profile")
+	})
+}

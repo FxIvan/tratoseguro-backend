@@ -42,34 +42,6 @@ func main() {
 
 	gin := gin.Default()
 	route.Setup(appEnv, timeout, *client.Database("books"), gin)
-	/*
-		router.POST("/", postBooks)
-
-		coll := client.Database("db").Collection("books")
-		doc := Book{Title: "Atonement", Author: "Ian McEwan"}
-
-		result, err := coll.InsertOne(context.TODO(), doc)
-
-		fmt.Printf("Inserted document with _id: %v\n", result.InsertedID)
-	*/
-	/*
-		coll := client.Database("sample_mflix").Collection("movies")
-		title := "Back to the Future"
-		var result bson.M
-		err = coll.FindOne(context.TODO(), bson.D{{"title", title}}).Decode(&result)
-		if err == mongo.ErrNoDocuments {
-			fmt.Printf("No document was found with the title %s\n", title)
-			return
-		}
-		if err != nil {
-			panic(err)
-		}
-		jsonData, err := json.MarshalIndent(result, "", "    ")
-		if err != nil {
-			panic(err)
-		}
-		fmt.Printf("%s\n", jsonData)
-	*/
 	gin.Run(":8080")
 }
 
@@ -77,23 +49,4 @@ type SimpleUser struct {
 	Id       int    `json:"id"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
-}
-type Book struct {
-	ID     string `json:"id"`
-	Title  string `json:"title"`
-	Author string `json:"author"`
-}
-
-var library []Book
-
-func postBooks(c *gin.Context) {
-
-	var newBook Book
-
-	if err := c.BindJSON((&newBook)); err != nil {
-		return
-	}
-
-	fmt.Print(newBook)
-
 }
