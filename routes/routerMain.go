@@ -16,7 +16,7 @@ func Setup(env *bootstrap.Env, timeout time.Duration, db mongo.Database, gin *gi
 	SignUp(env, timeout, db, publicRoute)
 	SignIn(env, timeout, db, publicRoute)
 
-	protectRouter := gin.Group("/api/v1/protected")
+	protectRouter := gin.Group("/api/v2")
 
 	protectRouter.Use(middleware.AuthMiddleware(config.JWTSecret))
 	ProfileUser(env, timeout, db, protectRouter)

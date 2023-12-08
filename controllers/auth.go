@@ -19,6 +19,11 @@ type Response struct {
 	Data string `json:"data"`
 }
 
+type UserRegister struct {
+	Email string `json:"email"`
+	Password string `json:"password"`
+}
+
 func Login(c *gin.Context, db *mongo.Database) Response{
 	var request domain.SignInRequest
 
@@ -102,5 +107,55 @@ func Login(c *gin.Context, db *mongo.Database) Response{
 		Status: "success",
 		Data: response,
 	}
+}
 
+func SignUp(c *gin.Context, db *mongo.Database) error{
+		
+
+	var request domain.SignupRequest
+
+		// Validate input
+		if err := c.ShouldBindJSON(&request); err != nil {
+			 c.JSON(400, gin.H{"error": err.Error()})
+			 return err
+		}
+		
+		// Context for the database
+		var cntx = c.Request.Context()
+
+		// Encrypt password, pasa por el ecryptado como 10 veces
+		encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
+
+		if err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return err
+		}
+
+		// Create user encrypt para despues guardar este en la base de datos
+		userEncrypt := domain.SignupRequestEncrypt{
+			Email:    request.Email,
+			Password: string(encryptedPassword),
+		}
+
+		// Check if email already exists
+		filter := bson.M{"email": userEncrypt.Email}
+		err = db.Collection("users").FindOne(cntx, filter).Decode(&userEncrypt)
+		if err == nil {
+			c.JSON(400, gin.H{"error": "Email already in use"})
+			return err
+		}else if err != mongo.ErrNoDocuments {
+			c.JSON(500, gin.H{"error --->": err.Error()})
+			return err
+		}
+
+		// Insert user into database
+		_ , err = db.Collection("users").InsertOne(cntx, userEncrypt)
+		if err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return err
+		}
+
+		// Respuesta de usuario creado
+		c.JSON(200, gin.H{"message": "User created successfully"})
+		return nil
 }
