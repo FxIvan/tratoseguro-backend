@@ -15,6 +15,7 @@ type SignupRequest struct {
 type SignupRequestEncrypt struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	Active   bool   `json:"active"`
 }
 
 type SignInRequest struct {

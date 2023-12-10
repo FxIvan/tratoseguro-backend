@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -8,6 +10,8 @@ import (
 	"github.com/FxIvan/domain"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/sendgrid/sendgrid-go"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
@@ -135,6 +139,7 @@ func SignUp(c *gin.Context, db *mongo.Database) error{
 		userEncrypt := domain.SignupRequestEncrypt{
 			Email:    request.Email,
 			Password: string(encryptedPassword),
+			Active:  false,
 		}
 
 		// Check if email already exists
@@ -148,6 +153,23 @@ func SignUp(c *gin.Context, db *mongo.Database) error{
 			return err
 		}
 
+		//Sendgrid
+		from := mail.NewEmail("Titutlo en negro gmail", "service.almendra@gmail.com")
+		subject := "Titulo en gris de gmail"
+		to := mail.NewEmail("Titutlo en negro gmail", "almendraivan210814@gmail.com")
+		plainTextContent := "Body del gmail lo que lee el usuario, aqui deberia ir el link de redireccion"
+		htmlContent := "<strong>Body del gmail lo que lee el usuario, aqui deberia ir el link de redireccio</strong>"
+		message := mail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
+		client := sendgrid.NewSendClient(config.SendgridApiKEY)
+		response, err := client.Send(message)
+		if err != nil {
+			log.Println(err)
+		} else {
+			fmt.Println(response.StatusCode)
+			fmt.Println(response.Body)
+			fmt.Println(response.Headers)
+		}
+		
 		// Insert user into database
 		_ , err = db.Collection("users").InsertOne(cntx, userEncrypt)
 		if err != nil {
